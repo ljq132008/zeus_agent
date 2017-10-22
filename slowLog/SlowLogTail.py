@@ -9,56 +9,55 @@
 import logging
 import time
 import json
-
-from util.LoggerUtil import Logger
+import os
 from util.Tail import Tail
-import requests
 
-logger = Logger('slowlogagent.log',logging.DEBUG,logging.DEBUG)
+logger = logging.getLogger('logger01')
 
-class PostSlowLogApiClient():
 
-    def __init__(self,url,data):
-        self.url = url
-        self.data = data
+class SlowTail(Tail):
 
-    def post_slow_log_data(self):
-        request = requests.post(self.url,self.data)
-        logger.debug("slow log发送服务器端 postData:"+str(self.data))
+    last_file_size = -1
+    current_file_size = -1
 
-class slowTail(Tail):
-
-    def follow(self,**kwargs):
-        ''' Do a tail follow. If a callback function is registered it is called with every new line. 
+    def follow(self, **kwargs):
+        """
+        Do a tail follow. If a callback function is registered it is called with every new line.
         Else printed to standard out.
 
         Arguments:
-            s - Number of seconds to wait between each iteration; Defaults to 1. '''
+            s - Number of seconds to wait between each iteration; Defaults to 1.
+        """
 
         with open(self.tailed_file) as file_:
             # Go to the end of file
             file_.seek(0, 2)
-            while True:
+            while kwargs['switch'].value:
+                self.current_file_size = os.path.getsize(self.tailed_file)
                 curr_position = file_.tell()
                 line = file_.readline()
-                #logger.debug(line)
                 if not line:
                     file_.seek(curr_position)
-                    logger.debug(str(__file__ )+" "+str(kwargs['events']))
                     if kwargs['events']:
-                        slowLogEventsList = kwargs['events']
+                        slow_log_events_list = kwargs['events']
+                        logger.debug(slow_log_events_list)
                         instance_id = kwargs['mysql_instance_id']
-                        #通过API发送到服务器端处理
-                        apiUrl = kwargs['apiUrl']
-                        #发送post请求
+                        # 发送post请求
+
                         try:
-                            print "发送数据到API"
-                            postClient = PostSlowLogApiClient(apiUrl,{'instance_id':instance_id,'post_data':json.dumps(slowLogEventsList)})
-                            postClient.post_slow_log_data()
+                            logger.debug("发送数据到API")
+                            post_client = kwargs['api_client']
+                            from util.apiFunName import FunNameDict
+                            post_client.agent_post(FunNameDict.PUSH_SLOW_LOGS, {'mysql_id': instance_id, 'data': slow_log_events_list})
                         except Exception, e:
                             print e.message
                             logger.error("发送post请求失败...继续监听slowlog")
+
                     del kwargs['events'][:]
+
+                    if self.current_file_size < self.last_file_size:
+                        file_.seek(0, 2)
                     time.sleep(kwargs['interval'])
+                    self.last_file_size = self.current_file_size
                 else:
-                    self.callback(line,kwargs)
+                    self.callback(line)

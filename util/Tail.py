@@ -25,6 +25,8 @@ Example:
 import os
 import sys
 import time
+
+
 class Tail(object):
     ''' Represents a tail command. '''
 
