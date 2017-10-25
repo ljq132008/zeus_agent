@@ -10,6 +10,7 @@
 class FunNameDict:
     GET_MONITOR_CONF = 'getMonitorConf'
     PUSH_SLOW_LOGS = 'pushSlowLogs'
+    PERFORMANCE_QUOTA = 'performanceQuota'
 
     def __init__(self):
         pass

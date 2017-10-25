@@ -9,7 +9,8 @@
 import requests
 import json
 
-class AgentApiClient():
+
+class AgentApiClient:
 
     def __init__(self, url):
         self.url = url
@@ -20,7 +21,7 @@ class AgentApiClient():
 if __name__ == '__main__':
     api = AgentApiClient('http://10.20.0.155:5001/api/v1000/agent')
     try:
-        monitor_confs = api.agentPost('getMonitorConf', "{'host_ip':'10.20.0.254'}")
+        monitor_confs = api.agent_post('getMonitorConf', "{'host_ip':'10.20.0.254'}")
         print monitor_confs.text
 
     except Exception as error:
