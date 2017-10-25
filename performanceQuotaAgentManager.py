@@ -13,7 +13,7 @@ import os
 import ConfigParser
 from util.agentApiClient import AgentApiClient
 import schedule
-from mysqlPerformanceQuota.PerformanceQuota import PerformanceQuota
+from mysqlPerformanceQuota.performanceQuota import PerformanceQuota
 
 """
 负责管理agent节点

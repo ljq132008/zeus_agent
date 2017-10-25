@@ -145,6 +145,11 @@ class AgentManager(Daemon):
             logger.debug(monitor_type)
             a_process = AgentManager.get_slow_log_process(dict_key, monitor_type, mysql_id, api_client, mysql_host, mysql_port, mysql_user, mysql_password)
             return a_process
+        elif monitor_type == 'performance_quota':
+            logger.info(str(dict_key) + ':监控线程准备创建')
+            logger.debug(monitor_type)
+            a_process = AgentManager.get_performance_quota_process(dict_key, monitor_type, mysql_id, api_client, mysql_host, mysql_port, mysql_user, mysql_password)
+            return a_process
         else:
             # todo
             pass
@@ -163,6 +168,17 @@ class AgentManager(Daemon):
         a_process = multiprocessing.Process(target=handler.slow_log_job_work, args=(switch,))
         a_process.start()
         logger.debug("slow log 监控进程被创建")
+        return MonitorProcess(name, monitor_type, switch, a_process)
+
+    @staticmethod
+    def get_performance_quota_process(name, monitor_type, mysql_id, api_client, mysql_host, mysql_port, mysql_user, mysql_password):
+        from mysqlPerformanceQuota.performanceQuota import PerformanceQuota
+        handler = PerformanceQuota(mysql_id, api_client, 1, mysql_host, mysql_port, mysql_user, mysql_password)
+        logger.debug("performance quota handler 被创建")
+        switch = Value('b', True)
+        a_process = multiprocessing.Process(target=handler.performance_quota_job_work, args=(switch,))
+        a_process.start()
+        logger.debug("performance quota 监控进程被创建")
         return MonitorProcess(name, monitor_type, switch, a_process)
 
     @staticmethod
