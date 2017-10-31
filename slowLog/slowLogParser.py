@@ -49,7 +49,6 @@ class Parser:
         return result[1]
 
     def set_datetime_by_time_line(self, line):
-        self.event_dict.clear()
         time_str = "20" + line.replace("# Time:", "").replace("  ", " ").strip()
         query_time = str(datetime.datetime.strptime(time_str, "%Y%m%d %H:%M:%S"))
         self.event_dict['time'] = query_time
@@ -68,6 +67,7 @@ class Parser:
                 self.event_dict['rows_examined'] = tmp_item.replace("Rows_examined:", "")
 
     def set_login_user_ip(self, line):
+        self.event_dict.clear()
         tmp_line = line.replace("#", "").replace(": ", ":").replace("  ", " ").replace("  ", " ")
         result = re.findall("\[([\S]+)\]", tmp_line)
         if len(result) == 1:
