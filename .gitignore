@@ -1,4 +1,6 @@
 # Python:
+*.pyc
+*.log
 *.py[cod]
 *.so
 *.egg

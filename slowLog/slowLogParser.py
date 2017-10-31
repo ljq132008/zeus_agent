@@ -9,6 +9,7 @@
 import commands
 import sys
 import datetime
+import time
 import re
 import MySQLdb
 from util.DBUtil import DBUtil
@@ -110,6 +111,12 @@ class Parser:
 
     def set_timestamp(self, line):
         result = re.findall("=([\S]+);", line)
+        ##################################
+        # fixed 同一秒内多条slow log写入日志的bug
+        time_stamp = time.localtime(int(result[0]))
+        dt_time = str(time.strftime("%Y-%m-%d %H:%M:%S", time_stamp))
+        self.event_dict['time'] = dt_time
+        ##################################
         self.event_dict['timestamp'] = result[0]
 
     def paser_query_log(self, line):
