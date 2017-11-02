@@ -50,17 +50,35 @@ class PerformanceQuota:
         self.conn.autocommit(True)
         cursor = self.conn.cursor()
         create_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        sql = "show global status where Variable_name in ('Com_commit','com_delete','com_insert','Com_rollback','com_select','com_update','Questions');"
-        cursor.execute(sql)
-        results = cursor.fetchall()
-        for quota in results:
+        #sql = "show global status where Variable_name in ('Com_commit','com_delete','com_insert','Com_rollback','com_select','com_update','Questions');"
+        diff_sql = """/*diff*/
+                        show global status where Variable_name in 
+                        (/*标准数据统计*/'Com_commit','com_delete','com_insert','Com_rollback','com_select','com_update','Questions',
+                         /*线程处理*/'Threads_running','Threads_connected','Threads_created','Threads_cached',
+                         /*网络字节数*/'Bytes_received','Bytes_sent',
+                         /*buffer pool的缓存命中率*/'Innodb_buffer_pool_read_requests','Innodb_buffer_pool_reads',
+                         /*buffer pool页的状态*/'Innodb_buffer_pool_pages_flushed',
+                         /*数据读写请求数*/'Innodb_data_reads','Innodb_data_writes','Innodb_data_read','Innodb_data_written',
+                         /**/'Innodb_os_log_fsyncs','Innodb_os_log_written');
+                    """
+        global_sql = "/*global*/show global status where Variable_name in (/*buffer pool页的状态*/'Innodb_buffer_pool_pages_data','Innodb_buffer_pool_pages_free','Innodb_buffer_pool_pages_dirty');"
+        cursor.execute(diff_sql)
+        diff_results = cursor.fetchall()
+        cursor.execute(global_sql)
+        globa_results = cursor.fetchall()
+
+        for quota in diff_results:
             tmp_dict[quota[0]] = quota[1]
 
-        if self.quota_dict:
+        if self.quota_dict :
             result_dict = self.diff_dict(tmp_dict, self.quota_dict, self.interval)
             self.quota_dict = tmp_dict.copy()
             result_dict['create_time'] = create_time
+            #写入非diff变量值
+            for global_quota in globa_results:
+                result_dict[global_quota[0]] = global_quota[1]
             logger.debug("result_dict="+str(result_dict))
+
             from util.apiFunName import FunNameDict
             self.api_client.agent_post(FunNameDict.PERFORMANCE_QUOTA, {'mysql_id': self.mysql_id, 'data': result_dict})
         # 如果quotaDict是空 则为第一次运行 将结果集赋值给全局quotaDict 不做任何处理
